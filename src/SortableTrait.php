@@ -45,10 +45,23 @@ trait SortableTrait
      */
     public function getOrderNumberAtPosition(int $position): int
     {
-        $position--;
-        $position = max($position, 0);
 
-        return (int) $this->buildSortQuery()->orderBy($this->determineOrderColumnName())->skip($position)->limit(1)->value($this->determineOrderColumnName());
+        $sortQueryResults = $this->buildSortQuery()->orderBy($this->determineOrderColumnName())->get();
+
+        $returnValue = $this->getHighestOrderNumber();
+
+        foreach ($sortQueryResults as $key => $sortQueryResult) {
+
+            if($position <= $sortQueryResult->order) {
+
+                $returnValue = $sortQueryResult->order;
+
+                break;
+            }
+
+        }
+
+        return $returnValue;
     }
 
     /**
