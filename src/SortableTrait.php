@@ -255,41 +255,29 @@ trait SortableTrait
     }
 
     /**
-     * Move a model into a specified position
-     * Positions starts at 1. 0 would be the same as start.
+     * Moves this model to a specified position
      *
-     * @param int $newPosition
+     * @param integer $position
      *
      * @return $this
      */
-    public function moveToPosition(int $newPosition): self
+    public function moveToPosition($position)
     {
+        $position = max(1, min($position, $this->getHighestOrderNumber()));
+
         $orderColumnName = $this->determineOrderColumnName();
 
-        $newPosition = max($newPosition, 0);
+        $this->buildSortQuery()
+            ->where($this->getKeyName(), '!=', $this->id)
+            ->where($orderColumnName, '>=', $position)
+            ->increment($orderColumnName);
 
-        $currentPosition = (int) $this->$orderColumnName;
-        $orderAtPosition = $this->getOrderNumberAtPosition($newPosition);
-
-        // No need to do anything, it is already in the correct position
-        if ($currentPosition === $newPosition) {
-            return $this;
-        }
-
-        if ($newPosition > $currentPosition) {
-            // The model is moving up
-            $this->buildSortQuery()->where([[$this->getKeyName(), '!=', $this->id], [$orderColumnName, '>', $currentPosition], [$orderColumnName, '<=', $orderAtPosition]])->decrement($orderColumnName);
-        } else {
-            // The model is moving down
-            $this->buildSortQuery()->where([[$this->getKeyName(), '!=', $this->id], [$orderColumnName, '<', $currentPosition], [$orderColumnName, '>=', $orderAtPosition]])->increment($orderColumnName);
-        }
-
-        $this->$orderColumnName = $orderAtPosition;
+        $this->$orderColumnName = $position;
         $this->save();
 
         return $this;
     }
-
+    
     /**
      * Build eloquent builder of sortable.
      *
